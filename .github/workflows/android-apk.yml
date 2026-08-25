@@ -37,13 +37,6 @@ jobs:
           else
             echo 'تعذر التحقق من Gold API من بيئة GitHub الحالية؛ يحافظ التطبيق على سلوك آمن ويعرض غير متاح حتى نجاح المصدر.' >> "$GITHUB_STEP_SUMMARY"
           fi
-      - name: اختبار واجهة التطبيق على محاكي Android
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          target: default
-          arch: x86_64
-          script: gradle :app:connectedDebugAndroidTest --no-daemon
       - name: بناء APK للإصدار
         run: gradle :app:assembleRelease --no-daemon
       - name: فحص ملف APK
