@@ -25,4 +25,19 @@ class MarketDataTest {
         assertTrue(SourceCatalog.all.all { it.url.startsWith("https://") })
         assertTrue(SourceCatalog.all.map { it.url }.toSet().size == SourceCatalog.all.size)
     }
+
+    @Test
+    fun everyVisibleSourceActionHasAnExpectedSecureDestination() {
+        val expectedLabels = setOf(
+            "Gold API",
+            "ExchangeRate-API",
+            "البورصة المصرية",
+            "البنك المركزي المصري",
+        )
+        assertEquals(expectedLabels, SourceCatalog.all.map { it.label }.toSet())
+        expectedLabels.forEach { label ->
+            val destination = SourceCatalog.urlFor(label)
+            assertTrue("رابط $label يجب أن يكون آمناً", destination?.startsWith("https://") == true)
+        }
+    }
 }
