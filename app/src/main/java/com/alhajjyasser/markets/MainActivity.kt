@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MarketsApp() {
+internal fun MarketsApp() {
     var currentTab by remember { mutableStateOf(AppTab.HOME) }
     var snapshot by remember { mutableStateOf<MarketSnapshot?>(null) }
     var loading by remember { mutableStateOf(false) }
