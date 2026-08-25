@@ -105,7 +105,7 @@ class LiveMarketRepository(
             .build()
         client.newCall(request).execute().use { response ->
             check(response.isSuccessful) { "HTTP ${response.code}" }
-            return response.body.string()
+            return response.body?.string() ?: error("استجابة المصدر فارغة.")
         }
     }
 }
