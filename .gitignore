@@ -38,6 +38,9 @@ yarn-error.log*
 *.p12
 android/app/debug/
 android/app/release/
+*.iml
+local.properties
+app/build/
 
 # Desktop
 out/

@@ -1,0 +1,61 @@
+name: بناء APK Android
+
+on:
+  push:
+    branches:
+      - feature/complete-app-structure
+    tags:
+      - apk-v*
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-build:
+    name: اختبار وبناء التطبيق
+    runs-on: ubuntu-latest
+    steps:
+      - name: استنساخ المصدر
+        uses: actions/checkout@v4
+      - name: إعداد Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: إعداد Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+      - name: تشغيل اختبارات الوحدة
+        run: gradle :app:testDebugUnitTest --no-daemon
+      - name: التحقق من مصادر الأسعار الحية
+        run: |
+          curl --fail --silent --show-error --max-time 15 -H 'Accept: application/json' -H 'User-Agent: AlHajjYasserMarkets/1.0' 'https://api.gold-api.com/price/XAU' | grep -Eq '"price":[0-9]'
+          curl --fail --silent --show-error --max-time 15 -H 'Accept: application/json' -H 'User-Agent: AlHajjYasserMarkets/1.0' 'https://open.er-api.com/v6/latest/USD' | grep -Eq '"EGP":[0-9]'
+      - name: اختبار واجهة التطبيق على محاكي Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          script: gradle :app:connectedDebugAndroidTest --no-daemon
+      - name: بناء APK للإصدار
+        run: gradle :app:assembleRelease --no-daemon
+      - name: فحص ملف APK
+        run: |
+          test -s app/build/outputs/apk/release/app-release.apk
+          unzip -t app/build/outputs/apk/release/app-release.apk >/dev/null
+      - name: حفظ APK كأثر بناء
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlHajjYasserMarkets-APK
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+      - name: نشر APK في إصدار GitHub
+        if: startsWith(github.ref, 'refs/tags/apk-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: app/build/outputs/apk/release/app-release.apk
+          name: AlHajj Yasser Markets ${{ github.ref_name }}
