@@ -29,6 +29,7 @@ class MarketDataTest {
     @Test
     fun everyVisibleSourceActionHasAnExpectedSecureDestination() {
         val expectedLabels = setOf(
+            "Yahoo Finance",
             "Gold API",
             "ExchangeRate-API",
             "البورصة المصرية",
