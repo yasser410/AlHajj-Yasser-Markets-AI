@@ -64,7 +64,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -240,10 +239,9 @@ private fun AnimatedChartCard(series: MarketSeries) {
                     val y = size.height - ((point.close - min) / range * size.height).toFloat()
                     if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
-                val visiblePath = android.graphics.Path()
-                val measure = android.graphics.PathMeasure(path.asAndroidPath(), false)
-                measure.getSegment(0f, measure.length * progress.value, visiblePath, true)
-                drawPath(androidx.compose.ui.graphics.asComposePath(visiblePath), color = AnalyticalBlue, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                clipRect(right = size.width * progress.value) {
+                    drawPath(path, color = AnalyticalBlue, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                }
             }
         }
     }
