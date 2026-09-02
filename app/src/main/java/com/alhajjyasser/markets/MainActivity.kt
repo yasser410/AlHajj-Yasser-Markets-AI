@@ -239,9 +239,7 @@ private fun AnimatedChartCard(series: MarketSeries) {
                     val y = size.height - ((point.close - min) / range * size.height).toFloat()
                     if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
-                clipRect(right = size.width * progress.value) {
-                    drawPath(path, color = AnalyticalBlue, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
-                }
+                drawPath(path, color = AnalyticalBlue, alpha = progress.value, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
             }
         }
     }
