@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
@@ -77,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -227,8 +229,8 @@ private fun MarketOrb3D(modifier: Modifier = Modifier) {
         val center = Offset(size.width * 0.56f, size.height * 0.52f)
         drawCircle(Brush.radialGradient(listOf(Color(0xFFFFE8A3), Gold, Color(0xFF805F12)), center, radius * 1.8f), radius, center)
         rotate(spin.value, center) {
-            drawOval(Color(0xAAFFFFFF), center.x - radius * 1.65f, center.y - radius * 0.48f, center.x + radius * 1.65f, center.y + radius * 0.48f, style = Stroke(width = 2.dp.toPx()))
-            drawOval(Color(0x66D4A72C), center.x - radius * 1.4f, center.y - radius * 0.75f, center.x + radius * 1.4f, center.y + radius * 0.75f, style = Stroke(width = 2.dp.toPx()))
+            drawOval(Color(0xAAFFFFFF), topLeft = Offset(center.x - radius * 1.65f, center.y - radius * 0.48f), size = Size(radius * 3.3f, radius * 0.96f), style = Stroke(width = 2.dp.toPx()))
+            drawOval(Color(0x66D4A72C), topLeft = Offset(center.x - radius * 1.4f, center.y - radius * 0.75f), size = Size(radius * 2.8f, radius * 1.5f), style = Stroke(width = 2.dp.toPx()))
         }
         drawCircle(Color.White.copy(alpha = 0.72f), radius * 0.12f, Offset(center.x - radius * 0.38f, center.y - radius * 0.38f))
     }
