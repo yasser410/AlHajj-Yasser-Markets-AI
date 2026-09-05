@@ -32,11 +32,12 @@ jobs:
       - name: التحقق من مصادر الأسعار الحية
         run: |
           curl --fail --silent --show-error --max-time 15 -H 'Accept: application/json' -H 'User-Agent: AlHajjYasserMarkets/1.0' 'https://open.er-api.com/v6/latest/USD' | grep -Eq '"EGP":[0-9]'
-          if curl --retry 3 --retry-all-errors --fail --silent --show-error --max-time 15 -H 'Accept: application/json' -H 'User-Agent: AlHajjYasserMarkets/1.0' 'https://api.gold-api.com/price/XAU' | grep -Eq '"price":[0-9]'; then
-            echo 'تم التحقق من Gold API بنجاح.'
-          else
-            echo 'تعذر التحقق من Gold API من بيئة GitHub الحالية؛ يحافظ التطبيق على سلوك آمن ويعرض غير متاح حتى نجاح المصدر.' >> "$GITHUB_STEP_SUMMARY"
-          fi
+          curl --retry 3 --retry-all-errors --fail --silent --show-error --max-time 15 -H 'Accept: application/json' -H 'User-Agent: AlHajjYasserMarkets/2.0' 'https://api.gold-api.com/price/XAU' | grep -Eq '"price":[0-9]'
+          echo 'تم التحقق من Gold API بنجاح.'
+          for symbol in 'COMI.CA' 'SHY' 'GC%3DF'; do
+            curl --retry 3 --retry-all-errors --fail --silent --show-error --max-time 15 -H 'Accept: application/json' -H 'User-Agent: AlHajjYasserMarkets/2.0' "https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=1mo&interval=1d" | grep -Eq '"close":\[[^]]*[0-9]'
+            echo "تم التحقق من سلسلة ${symbol} الحية."
+          done
       - name: بناء APK للإصدار
         run: gradle :app:assembleRelease --no-daemon
       - name: فحص ملف APK

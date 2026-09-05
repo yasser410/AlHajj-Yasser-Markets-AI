@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -58,6 +59,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -65,6 +67,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +80,7 @@ import kotlinx.coroutines.withContext
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.roundToInt
 
 private val Navy = Color(0xFF081A33)
 private val Gold = Color(0xFFD4A72C)
@@ -206,6 +210,7 @@ private fun Hero3DCard(title: String, value: String, subtitle: String, onSource:
                 Spacer(Modifier.height(8.dp))
                 Text(subtitle, color = Color(0x88FFFFFF), fontSize = 12.sp)
             }
+            MarketOrb3D(Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 4.dp))
             IconButton(onClick = onSource, modifier = Modifier.align(Alignment.TopEnd)) {
                 Icon(Icons.Default.OpenInNew, contentDescription = "فتح المصدر", tint = Color(0xAAFFFFFF))
             }
@@ -214,35 +219,88 @@ private fun Hero3DCard(title: String, value: String, subtitle: String, onSource:
 }
 
 @Composable
+private fun MarketOrb3D(modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "market-orb")
+    val spin = transition.animateFloat(0f, 360f, infiniteRepeatable(tween(5200, easing = LinearEasing)), label = "orb-spin")
+    Canvas(modifier.size(96.dp)) {
+        val radius = size.minDimension * 0.31f
+        val center = Offset(size.width * 0.56f, size.height * 0.52f)
+        drawCircle(Brush.radialGradient(listOf(Color(0xFFFFE8A3), Gold, Color(0xFF805F12)), center, radius * 1.8f), radius, center)
+        rotate(spin.value, center) {
+            drawOval(Color(0xAAFFFFFF), center.x - radius * 1.65f, center.y - radius * 0.48f, center.x + radius * 1.65f, center.y + radius * 0.48f, style = Stroke(width = 2.dp.toPx()))
+            drawOval(Color(0x66D4A72C), center.x - radius * 1.4f, center.y - radius * 0.75f, center.x + radius * 1.4f, center.y + radius * 0.75f, style = Stroke(width = 2.dp.toPx()))
+        }
+        drawCircle(Color.White.copy(alpha = 0.72f), radius * 0.12f, Offset(center.x - radius * 0.38f, center.y - radius * 0.38f))
+    }
+}
+
+@Composable
 private fun AnimatedChartCard(series: MarketSeries) {
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(series) { progress.animateTo(1f, animationSpec = tween(1500, easing = FastOutSlowInEasing)) }
+    var selectedRange by remember(series) { mutableStateOf("1M") }
+    val chartPoints = if (selectedRange == "1W") series.points.takeLast(7) else series.points
+    var selectedIndex by remember(series, selectedRange) { mutableStateOf(chartPoints.lastIndex.coerceAtLeast(0)) }
+    val progress = remember(series, selectedRange) { Animatable(0f) }
+    LaunchedEffect(series, selectedRange) { progress.snapTo(0f); progress.animateTo(1f, animationSpec = tween(900, easing = FastOutSlowInEasing)) }
+    val selectedPoint = chartPoints.getOrNull(selectedIndex.coerceIn(0, chartPoints.lastIndex.coerceAtLeast(0)))
+    val selectedDate = selectedPoint?.let { Instant.ofEpochSecond(it.time).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("dd MMM yyyy", Locale("ar", "EG"))) } ?: "غير متاح"
     Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
+                Column(Modifier.weight(1f)) {
                     Text(series.instrument.name, color = Navy, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Text("${series.instrument.symbol} • ${series.instrument.category}", color = Color(0xFF68788A), fontSize = 12.sp)
                 }
-                Text("${MarketFormatting.money(series.points.lastOrNull()?.close)} ${series.instrument.currency}", color = AnalyticalBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("${MarketFormatting.money(series.points.lastOrNull()?.close)} ${series.instrument.currency}", color = AnalyticalBlue, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("${chartPoints.size} نقطة حقيقية", color = Color(0xFF68788A), fontSize = 11.sp)
+                }
             }
-            Spacer(Modifier.height(16.dp))
-            Canvas(modifier = Modifier.fillMaxWidth().height(100.dp)) {
-                if (series.points.size < 2) return@Canvas
-                val min = series.points.minOf { it.close }
-                val max = series.points.maxOf { it.close }
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { selectedRange = "1W" }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 7.dp)) { Text("أسبوع") }
+                Button(onClick = { selectedRange = "1M" }, modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 7.dp)) { Text("شهر") }
+            }
+            Spacer(Modifier.height(8.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF1FB)), shape = RoundedCornerShape(10.dp)) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("المؤشر: $selectedDate", color = Navy, fontSize = 12.sp)
+                    Text("${MarketFormatting.money(selectedPoint?.close)} ${series.instrument.currency}", color = AnalyticalBlue, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Canvas(
+                modifier = Modifier.fillMaxWidth().height(150.dp).pointerInput(chartPoints) {
+                    detectDragGestures(onDragStart = { position -> selectedIndex = chartIndex(position.x, size.width, chartPoints.size) }, onDrag = { change, _ -> change.consume(); selectedIndex = chartIndex(change.position.x, size.width, chartPoints.size) })
+                }
+            ) {
+                if (chartPoints.size < 2) return@Canvas
+                val min = chartPoints.minOf { it.close }
+                val max = chartPoints.maxOf { it.close }
                 val range = (max - min).coerceAtLeast(0.01)
-                val stepX = size.width / (series.points.size - 1)
+                val stepX = size.width / (chartPoints.size - 1)
                 val path = Path()
-                series.points.forEachIndexed { index, point ->
+                chartPoints.forEachIndexed { index, point ->
                     val x = index * stepX
-                    val y = size.height - ((point.close - min) / range * size.height).toFloat()
+                    val y = size.height - ((point.close - min) / range * (size.height - 12.dp.toPx())).toFloat() - 6.dp.toPx()
                     if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
+                for (grid in 1..4) drawLine(Color(0xFFE5EBF3), Offset(0f, size.height * grid / 5f), Offset(size.width, size.height * grid / 5f), 1.dp.toPx())
                 drawPath(path, color = AnalyticalBlue, alpha = progress.value, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                val markerIndex = selectedIndex.coerceIn(0, chartPoints.lastIndex)
+                val markerX = markerIndex * stepX
+                val markerY = size.height - ((chartPoints[markerIndex].close - min) / range * (size.height - 12.dp.toPx())).toFloat() - 6.dp.toPx()
+                drawLine(Color(0xAA1E5AA8), Offset(markerX, 0f), Offset(markerX, size.height), 1.dp.toPx())
+                drawCircle(Color.White, 7.dp.toPx(), Offset(markerX, markerY))
+                drawCircle(AnalyticalBlue, 4.dp.toPx(), Offset(markerX, markerY))
             }
+            Text("اسحب المؤشر على الرسم لقراءة السعر والتاريخ", color = Color(0xFF68788A), fontSize = 11.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
         }
     }
+}
+
+private fun chartIndex(x: Float, width: Int, count: Int): Int {
+    if (count <= 1 || width <= 0) return 0
+    return ((x.coerceIn(0f, width.toFloat()) / width) * (count - 1)).roundToInt().coerceIn(0, count - 1)
 }
 
 @Composable

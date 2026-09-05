@@ -40,7 +40,7 @@ object InstrumentCatalog {
         MarketInstrument("TMGH.CA", "طلعت مصطفى", "أسهم مصرية", "EGP"),
         MarketInstrument("SHY", "سندات خزانة قصيرة", "سندات", "USD"),
         MarketInstrument("IEF", "سندات خزانة متوسطة", "سندات", "USD"),
-        MarketInstrument("XAUUSD=X", "الذهب الفوري", "ذهب", "USD"),
+        MarketInstrument("GC=F", "ذهب COMEX", "ذهب", "USD"),
     )
 }
 
